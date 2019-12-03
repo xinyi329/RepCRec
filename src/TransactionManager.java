@@ -200,7 +200,7 @@ public class TransactionManager {
                 if (Operation.OperationType.READ.equals(operation.getType())) {
                     read(operation.getTransactionId(), operation.getVariableId(), operation.getTimestamp());
                 } else {
-                    write(operation.getTransactionId(), operation.getTransactionId(), operation.getValue(), operation.getTimestamp());
+                    write(operation.getTransactionId(), operation.getVariableId(), operation.getValue(), operation.getTimestamp());
                 }
                 if (!transactions.get(operation.getTransactionId()).isBlocked()) {
                     iterator.remove();
