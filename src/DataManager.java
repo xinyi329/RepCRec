@@ -54,10 +54,10 @@ public class DataManager {
 
     public int read(Transaction.TransactionType t, int ts, Operation o) {
         if (Operation.OperationType.READ.equals(o.getType()) && canRead(t, o)) {
-            lockManagers.get(o.getVariableId()).lock(o.getType(), o.getTransactionId(), o.getVariableId());
             if (Transaction.TransactionType.READ_ONLY.equals(t)) {
                 return readByReadOnlyTransaction(ts, o, variables.get(o.getVariableId()));
             } else {
+                lockManagers.get(o.getVariableId()).lock(o.getType(), o.getTransactionId(), o.getVariableId());
                 return readByReadWriteTransaction(o, variables.get(o.getVariableId()));
             }
         }
@@ -94,6 +94,13 @@ public class DataManager {
             variable.setValueToCommit(o.getValue());
             variable.setTransactionIdToCommit(o.getTransactionId());
         }
+    }
+
+    public List<Integer> getLockHolders(int vid) {
+        if (lockManagers.containsKey(vid)) {
+            return lockManagers.get(vid).getLockHolders();
+        }
+        return new ArrayList<>();
     }
 
     public void abort(int tid) {

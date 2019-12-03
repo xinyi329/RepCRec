@@ -6,16 +6,22 @@ public class Operation {
         READ, WRITE
     }
 
+    private int timestamp;
     private int transactionId;
     private int variableId;
     private OperationType type;
     private int value;
 
-    public Operation(int tid, int vid, OperationType t, int v) {
+    public Operation(int ts, int tid, int vid, OperationType t, int v) {
+        timestamp = ts;
         transactionId = tid;
         variableId = vid;
         type = t;
         value = v;
+    }
+
+    public int getTimestamp() {
+        return timestamp;
     }
 
     public int getTransactionId() {

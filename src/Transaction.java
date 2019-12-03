@@ -12,6 +12,7 @@ public class Transaction {
     private int id;
     private int timestamp;
     private TransactionType type;
+    private boolean isBlocked;
     private boolean isAbortedBySiteFailure;
     private boolean isAbortedByDeadlock;
     private Set<Integer> accessedSites;
@@ -35,6 +36,18 @@ public class Transaction {
 
     public TransactionType getType() {
         return type;
+    }
+
+    public boolean isBlocked() {
+        return isBlocked;
+    }
+
+    public void block() {
+        isBlocked = true;
+    }
+
+    public void unblock() {
+        isBlocked = false;
     }
 
     public boolean isAborted() {

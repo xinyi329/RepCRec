@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Xinyi Liu, Ming Xu
@@ -36,12 +37,11 @@ public class LockManager {
     private boolean canAcquireWriteLock(int tid) {
         if (locks.size() > 1) {
             return false;
-        }
-        Lock writeLock = getWriteLock();
-        if (writeLock != null && writeLock.getTransactionId() != tid) {
+        } else if (locks.size() == 1 && getLock(tid) == null) {
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     public void lock(Operation.OperationType t, int tid, int vid) {
@@ -86,6 +86,10 @@ public class LockManager {
             return true;
         }
         return false;
+    }
+
+    public List<Integer> getLockHolders() {
+        return locks.stream().map(lock -> lock.getTransactionId()).collect(Collectors.toList());
     }
 
     private Lock getWriteLock() {
