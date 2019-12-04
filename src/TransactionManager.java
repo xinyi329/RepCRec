@@ -1,6 +1,9 @@
 import java.util.*;
 
 /**
+ * This class handles all transactions including read or write on variables and events of different
+ * sites. It is able to detect deadlocks.
+ * @version 12/04/2019
  * @author Xinyi Liu, Ming Xu
  */
 public class TransactionManager {
@@ -54,8 +57,7 @@ public class TransactionManager {
     public void end(int tid, int ts) {
         if (transactions.containsKey(tid)) {
             if (transactions.get(tid).isAborted()) {
-                System.out.println(String.format("T%d aborts", tid));
-                transactions.remove(tid);
+                System.out.println(String.format("T%d aborts due to previous access of a down site", tid));
                 abort(tid);
             } else {
                 if (Transaction.TransactionType.READ_WRITE.equals(transactions.get(tid).getType())) {
@@ -75,32 +77,33 @@ public class TransactionManager {
      * Reads value from a variable.
      * @param tid transactionId
      * @param vid variableId
+     * @param ts timestamp
      */
     public void read(int tid, int vid, int ts) {
-        if (transactions.containsKey(tid) && !transactions.get(tid).isAbortedByDeadlock()) {
+        if (transactions.containsKey(tid)) {
             Operation operation = new Operation(ts, tid, vid, Operation.OperationType.READ, 0);
             Transaction transaction = transactions.get(tid);
-            if (isAnotherOperationWaitingBefore(tid, vid, ts)) {
-                waitingOperations.add(operation);
-                transaction.block();
-                System.out.println(String.format("T%d blocked", tid));
-                return;
-            }
-            for (int i = 1; i <= SITE_COUNT; i++) {
-                if (sites.get(i).canRead(transaction.getType(), operation)) {
-                    int value = sites.get(i).read(transaction.getType(), transaction.getTimestamp(), operation);
-                    transaction.addAccessedSite(i);
-                    transaction.unblock();
-                    System.out.println(String.format("x%d: %d", vid, value));
-                    return;
+            Integer conflictTransactionId = getConflictWriteOperationWaitingBefore(tid, vid, ts);
+            if (conflictTransactionId != null) {
+                addToWaitsForGraphFromWaitingOperations(tid, conflictTransactionId);
+            } else {
+                for (int i = 1; i <= SITE_COUNT; i++) {
+                    if (sites.get(i).canRead(transaction.getType(), operation)) {
+                        int value = sites.get(i).read(transaction.getType(), transaction.getTimestamp(), operation);
+                        transaction.addAccessedSite(i);
+                        transaction.unblock();
+                        System.out.println(String.format("T%d reads x%d: %d", tid, vid, value));
+                        return;
+                    }
                 }
+                addToWaitsForGraphFromExecutedOperations(tid, vid);
             }
             if (!transaction.isBlocked()) {
                 waitingOperations.add(operation);
                 transaction.block();
                 System.out.println(String.format("T%d blocked", tid));
             }
-            detectDeadlock(tid, vid);
+            detectDeadlock(tid);
         }
     }
 
@@ -109,45 +112,47 @@ public class TransactionManager {
      * @param tid transactionId
      * @param vid variableId
      * @param v value
+     * @param ts timestamp
      */
     public void write(int tid, int vid, int v, int ts) {
-        if (transactions.containsKey(tid) && !transactions.get(tid).isAbortedByDeadlock()) {
+        if (transactions.containsKey(tid)) {
             Operation operation = new Operation(ts, tid, vid, Operation.OperationType.WRITE, v);
             Transaction transaction = transactions.get(tid);
-            if (isAnotherOperationWaitingBefore(tid, vid, ts)) {
-                waitingOperations.add(operation);
-                transaction.block();
-                System.out.println(String.format("T%d blocked", tid));
-                return;
-            }
-            boolean canWrite = true;
-            for (DataManager site : sites.values()) {
-                if (site.isActive() && site.containsVariable(vid)) {
-                    canWrite = canWrite && site.canWrite(transaction.getType(), operation);
-                }
-            }
-            if (canWrite) {
+            Integer conflictTransactionId = getConflictOperationWaitingBefore(tid, vid, ts);
+            if (conflictTransactionId != null && waitsForGraph.get(conflictTransactionId).size() > 0) {
+                addToWaitsForGraphFromWaitingOperations(tid, conflictTransactionId);
+            } else {
+                boolean canWrite = true;
                 for (DataManager site : sites.values()) {
                     if (site.isActive() && site.containsVariable(vid)) {
-                        site.write(transaction.getType(), operation);
-                        transaction.addAccessedSite(site.getId());
+                        canWrite = canWrite && site.canWrite(transaction.getType(), operation);
                     }
                 }
-                transaction.unblock();
-                System.out.println(String.format("T%d writes %d to x%d", tid, v, vid));
-                return;
+                if (canWrite) {
+                    for (DataManager site : sites.values()) {
+                        if (site.isActive() && site.containsVariable(vid)) {
+                            site.write(transaction.getType(), operation);
+                            transaction.addAccessedSite(site.getId());
+                        }
+                    }
+                    transaction.unblock();
+                    System.out.println(String.format("T%d writes x%d: %d", tid, vid, v));
+                    return;
+                }
+                addToWaitsForGraphFromExecutedOperations(tid, vid);
             }
             if (!transaction.isBlocked()) {
                 waitingOperations.add(operation);
                 transaction.block();
                 System.out.println(String.format("T%d blocked", tid));
             }
-            detectDeadlock(tid, vid);
+            detectDeadlock(tid);
         }
     }
 
     /**
-     * Gives the committed values of all copies of all variables at all sites, including sites that are down.
+     * Gives the committed values of all copies of all variables at all sites, including sites
+     * that are down.
      */
     public void dump() {
         for (int i = 1; i <= SITE_COUNT; i++) {
@@ -164,7 +169,7 @@ public class TransactionManager {
             sites.get(sid).fail();
             for (Transaction transaction : transactions.values()) {
                 if (transaction.hasAccessedSite(sid)) {
-                    transaction.setAbortedBySiteFailure();
+                    transaction.setAborted();
                 }
             }
             System.out.println(String.format("site %d fails", sid));
@@ -183,15 +188,23 @@ public class TransactionManager {
         retry();
     }
 
+    /**
+     * Aborts a transaction.
+     * @param tid transactionId
+     */
     private void abort(int tid) {
         for (DataManager site : sites.values()) {
             site.abort(tid);
         }
         waitingOperations.removeIf(operation -> operation.getTransactionId() == tid);
+        transactions.remove(tid);
         removeFromWaitsForGraph(tid);
         retry();
     }
 
+    /**
+     * Retries waiting operations by time order.
+     */
     private void retry() {
         Iterator<Operation> iterator = waitingOperations.iterator();
         while (iterator.hasNext()) {
@@ -209,18 +222,64 @@ public class TransactionManager {
         }
     }
 
-    private boolean isAnotherOperationWaitingBefore(int tid, int vid, int ts) {
+    /**
+     * Gets the transactionId of conflict write operation right before the new operation that
+     * accesses the same variable.
+     * @param tid transactionId
+     * @param vid variableId
+     * @param ts timestamp
+     * @return conflictTransactionId
+     */
+    private Integer getConflictWriteOperationWaitingBefore(int tid, int vid, int ts) {
+        Integer conflictTransactionId = null;
         for (Operation operation : waitingOperations) {
             if (operation.getTimestamp() >= ts) {
-                return false;
-            } else if (operation.getVariableId() == vid && operation.getTransactionId() != tid) {
-                return true;
+                break;
+            } else if (Operation.OperationType.WRITE.equals(operation.getType()) &&
+                    operation.getVariableId() == vid && operation.getTransactionId() != tid) {
+                conflictTransactionId = operation.getTransactionId();
             }
         }
-        return false;
+        return conflictTransactionId;
     }
 
-    private void addToWaitsForGraph(int tid, int vid) {
+    /**
+     * Gets the transactionId of conflict operation right before the new operation that accesses
+     * the same variable.
+     * @param tid transactionId
+     * @param vid variableId
+     * @param ts timestamp
+     * @return conflictTransactionId
+     */
+    private Integer getConflictOperationWaitingBefore(int tid, int vid, int ts) {
+        Integer conflictTransactionId = null;
+        for (Operation operation : waitingOperations) {
+            if (operation.getTimestamp() >= ts) {
+                break;
+            } else if (operation.getVariableId() == vid && operation.getTransactionId() != tid) {
+                conflictTransactionId = operation.getTransactionId();
+            }
+        }
+        return conflictTransactionId;
+    }
+
+    /**
+     * Adds a pair of conflict relation in waiting operations to waits-for graph.
+     * @param tid transactionId
+     * @param ctid conflictTransactionId
+     */
+    private void addToWaitsForGraphFromWaitingOperations(int tid, int ctid) {
+        if (waitsForGraph.containsKey(tid)) {
+            waitsForGraph.get(tid).add(ctid);
+        }
+    }
+
+    /**
+     * Adds all conflict relation of a transaction due to current lock holders to wait-for graph.
+     * @param tid transactionId
+     * @param vid variableId
+     */
+    private void addToWaitsForGraphFromExecutedOperations(int tid, int vid) {
         if (waitsForGraph.containsKey(tid)) {
             for (DataManager site : sites.values()) {
                 if (site.isActive() && site.containsVariable(vid)) {
@@ -232,6 +291,10 @@ public class TransactionManager {
         }
     }
 
+    /**
+     * Removes all conflict relations from waits-for graph.
+     * @param tid transactionId
+     */
     private void removeFromWaitsForGraph(int tid) {
         waitsForGraph.remove(tid);
         for (Set transactionIds : waitsForGraph.values()) {
@@ -239,19 +302,29 @@ public class TransactionManager {
         }
     }
 
-    private void detectDeadlock(int tid, int vid) {
-        addToWaitsForGraph(tid, vid);
+    /**
+     * Detects deadlocks in waits-for graph and aborts the youngest transaction if there is.
+     * @param tid transactionId
+     */
+    private void detectDeadlock(int tid) {
         if (waitsForGraph.containsKey(tid)) {
             List<Integer> cycle = new ArrayList<>();
             List<Integer> visited = new ArrayList<>();
             if (isCyclic(tid, cycle, visited)) {
                 int youngestTransactionId = getYoungestTransactionId(cycle);
+                System.out.println(String.format("T%d aborts due to deadlock", youngestTransactionId));
                 abort(youngestTransactionId);
-                System.out.println(String.format("T%d aborted due to deadlock", youngestTransactionId));
             }
         }
     }
 
+    /**
+     * Determine whether there is a cycle start from the input transactionId.
+     * @param tid transactionId
+     * @param cycle list of transactionIds that form the cycle
+     * @param visited list of transactionIds that visited
+     * @return boolean
+     */
     private boolean isCyclic(int tid, List<Integer> cycle, List<Integer> visited) {
         if (cycle.contains(tid)) {
             return true;
@@ -270,6 +343,11 @@ public class TransactionManager {
         return false;
     }
 
+    /**
+     * Gets the youngest transactionId.
+     * @param cycle list of transactionIds that form a cycle
+     * @return youngestTransactionId
+     */
     private int getYoungestTransactionId(List<Integer> cycle) {
         int timestamp = -1;
         int transactionId = -1;

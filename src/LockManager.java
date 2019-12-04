@@ -3,6 +3,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ * This class maintains locks for a single variable on a certain site.
+ * @version 12/03/2019
  * @author Xinyi Liu, Ming Xu
  */
 public class LockManager {
@@ -14,10 +16,20 @@ public class LockManager {
         locks = new ArrayList<>();
     }
 
+    /**
+     * Gets variableId.
+     * @return variableId
+     */
     public int getVariableId() {
         return variableId;
     }
 
+    /**
+     * Returns whether a transaction can acquire a lock.
+     * @param t operationType
+     * @param tid transactionId
+     * @return boolean
+     */
     public boolean canAcquireLock(Operation.OperationType t, int tid) {
         if (Operation.OperationType.READ.equals(t)) {
             return canAcquireReadLock(tid);
@@ -26,6 +38,11 @@ public class LockManager {
         }
     }
 
+    /**
+     * Returns whether a transaction can acquire a read lock.
+     * @param tid transactionId
+     * @return boolean
+     */
     private boolean canAcquireReadLock(int tid) {
         Lock writeLock = getWriteLock();
         if (writeLock != null && writeLock.getTransactionId() != tid) {
@@ -34,6 +51,11 @@ public class LockManager {
         return true;
     }
 
+    /**
+     * Returns whether a transaction can acquire a write lock.
+     * @param tid transactionId
+     * @return boolean
+     */
     private boolean canAcquireWriteLock(int tid) {
         if (locks.size() > 1) {
             return false;
@@ -44,6 +66,12 @@ public class LockManager {
         }
     }
 
+    /**
+     * Adds lock on a variable.
+     * @param t operationType
+     * @param tid transactionId
+     * @param vid variableId
+     */
     public void lock(Operation.OperationType t, int tid, int vid) {
         if (Operation.OperationType.READ.equals(t)) {
             lockForRead(tid, vid);
@@ -52,6 +80,11 @@ public class LockManager {
         }
     }
 
+    /**
+     * Adds read lock on a variable.
+     * @param tid transactionId
+     * @param vid variableId
+     */
     private void lockForRead(int tid, int vid) {
         if (canAcquireReadLock(tid)) {
             Lock transactionLock = getLock(tid);
@@ -61,6 +94,11 @@ public class LockManager {
         }
     }
 
+    /**
+     * Adds write lock on a variable.
+     * @param tid transactionId
+     * @param vid variableId
+     */
     private void lockForWrite(int tid, int vid) {
         if (canAcquireWriteLock(tid)) {
             Lock transactionLock = getLock(tid);
@@ -72,14 +110,26 @@ public class LockManager {
         }
     }
 
+    /**
+     * Releases locks of a transaction.
+     * @param tid transactionId.
+     */
     public void unlock(int tid) {
         locks.removeIf(l -> l.getTransactionId() == tid);
     }
 
+    /**
+     * Release all locks.
+     */
     public void unlockAll() {
         locks.clear();
     }
 
+    /**
+     * Returns whether a transaction is holding a write lock.
+     * @param tid transactionId
+     * @return boolean
+     */
     public boolean isWriteLockedBy(int tid) {
         Lock writeLock = getWriteLock();
         if (writeLock != null && writeLock.getTransactionId() == tid) {
@@ -88,10 +138,18 @@ public class LockManager {
         return false;
     }
 
+    /**
+     * Gets all transactions that hold lock on this variable.
+     * @return transactionIds of lock holders
+     */
     public List<Integer> getLockHolders() {
         return locks.stream().map(lock -> lock.getTransactionId()).collect(Collectors.toList());
     }
 
+    /**
+     * Gets write lock if exists.
+     * @return boolean
+     */
     private Lock getWriteLock() {
         for (Lock lock : locks) {
             if (Lock.LockType.WRITE_LOCK.equals(lock.getType())) {
@@ -101,6 +159,11 @@ public class LockManager {
         return null;
     }
 
+    /**
+     * Gets the lock a transaction holds if exists.
+     * @param tid transactionId
+     * @return lock
+     */
     private Lock getLock(int tid) {
         for (Lock lock : locks) {
             if (lock.getTransactionId() == tid) {

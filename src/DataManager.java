@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * This class provides the storage of variables and manages their locks for a certain site.
+ * @version 12/03/2019
  * @author Xinyi Liu, Ming Xu
  */
 public class DataManager {
@@ -27,18 +29,37 @@ public class DataManager {
         }
     }
 
+    /**
+     * Gets siteId.
+     * @return id
+     */
     public int getId() {
         return id;
     }
 
+    /**
+     * Returns whether the site is active.
+     * @return boolean
+     */
     public boolean isActive() {
         return isActive;
     }
 
+    /**
+     * Returns whether the site is holding a variable.
+     * @param vid variableId
+     * @return boolean
+     */
     public boolean containsVariable(int vid) {
         return variables.containsKey(vid);
     }
 
+    /**
+     * Returns whether a transaction can read a variable.
+     * @param t transactionType
+     * @param o operation
+     * @return boolean
+     */
     public boolean canRead(Transaction.TransactionType t, Operation o) {
         if (!isActive || !variables.containsKey(o.getVariableId())) {
             return false;
@@ -52,6 +73,13 @@ public class DataManager {
         return true;
     }
 
+    /**
+     * Reads a value.
+     * @param t transactionType
+     * @param ts timestamp
+     * @param o operation
+     * @return value
+     */
     public int read(Transaction.TransactionType t, int ts, Operation o) {
         if (Operation.OperationType.READ.equals(o.getType()) && canRead(t, o)) {
             if (Transaction.TransactionType.READ_ONLY.equals(t)) {
@@ -64,11 +92,24 @@ public class DataManager {
         return 0;
     }
 
+    /**
+     * Reads a value for a read-only transaction.
+     * @param ts timestamp
+     * @param o operation
+     * @param v variable
+     * @return value
+     */
     private int readByReadOnlyTransaction(int ts, Operation o, Variable v) {
         o.setValue(v.getLastCommittedValueBefore(ts));
         return v.getLastCommittedValueBefore(ts);
     }
 
+    /**
+     * Reads a value for a read-write transaction.
+     * @param o operation
+     * @param v variable
+     * @return value
+     */
     private int readByReadWriteTransaction(Operation o, Variable v) {
         if (v.getTransactionIdToCommit() == o.getTransactionId()) {
             o.setValue(v.getValueToCommit());
@@ -79,6 +120,12 @@ public class DataManager {
         }
     }
 
+    /**
+     * Returns whether a transaction can write to a variable.
+     * @param t transactionType
+     * @param o operation
+     * @return boolean
+     */
     public boolean canWrite(Transaction.TransactionType t, Operation o) {
         if (!isActive || Transaction.TransactionType.READ_ONLY.equals(t) ||
                 !variables.containsKey(o.getVariableId())) {
@@ -87,6 +134,11 @@ public class DataManager {
         return lockManagers.get(o.getVariableId()).canAcquireLock(o.getType(), o.getTransactionId());
     }
 
+    /**
+     * Writes to a variable.
+     * @param t transactionType
+     * @param o operation
+     */
     public void write(Transaction.TransactionType t, Operation o) {
         if (Operation.OperationType.WRITE.equals(o.getType()) && canWrite(t, o)) {
             lockManagers.get(o.getVariableId()).lock(o.getType(), o.getTransactionId(), o.getVariableId());
@@ -96,6 +148,11 @@ public class DataManager {
         }
     }
 
+    /**
+     * Gets transactionIds of lock holders on a variable.
+     * @param vid variableId
+     * @return transactionIds of lock holders
+     */
     public List<Integer> getLockHolders(int vid) {
         if (lockManagers.containsKey(vid)) {
             return lockManagers.get(vid).getLockHolders();
@@ -103,12 +160,21 @@ public class DataManager {
         return new ArrayList<>();
     }
 
+    /**
+     * Aborts a transaction.
+     * @param tid transactionId
+     */
     public void abort(int tid) {
         for (LockManager lockManager : lockManagers.values()) {
             lockManager.unlock(tid);
         }
     }
 
+    /**
+     * Commits a transaction.
+     * @param tid transactionId
+     * @param ts timestamp
+     */
     public void commit(int tid, int ts) {
         for (LockManager lockManager : lockManagers.values()) {
             if (lockManager.isWriteLockedBy(tid)) {
@@ -118,6 +184,9 @@ public class DataManager {
         }
     }
 
+    /**
+     * Gives the committed values of all copies of all variables at this site.
+     */
     public void dump() {
         List<String> variableStrings = new ArrayList<>();
         for (int i = 1; i <= VARIABLE_COUNT; i++) {
@@ -128,6 +197,9 @@ public class DataManager {
         System.out.println(String.format("site %d - %s", id, String.join(", ", variableStrings)));
     }
 
+    /**
+     * Fails this site.
+     */
     public void fail() {
         isActive = false;
         for (Variable variable : variables.values()) {
@@ -138,6 +210,9 @@ public class DataManager {
         }
     }
 
+    /**
+     * Recovers this site.
+     */
     public void recover() {
         isActive = true;
         for (Variable variable : variables.values()) {
