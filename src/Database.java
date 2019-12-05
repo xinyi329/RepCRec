@@ -1,304 +1,59 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+
 public class Database {
     public static void main(String[] args) {
+        BufferedReader bufferedReader;
         TransactionManager transactionManager = new TransactionManager();
-//        /* Test 1 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.write(1, 1, 101, 3);
-//        transactionManager.write(2, 2, 202, 4);
-//        transactionManager.write(1, 2, 102, 5);
-//        transactionManager.write(2, 1, 201, 6);
-//        transactionManager.end(1, 7);
-//        transactionManager.dump();
-//        /* Test 2 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.beginRO(2, 2);
-//        transactionManager.write(1, 1, 101, 3);
-//        transactionManager.read(2, 2, 4);
-//        transactionManager.write(1, 2, 102, 5);
-//        transactionManager.read(2, 1, 6);
-//        transactionManager.end(1, 7);
-//        transactionManager.end(2, 7);
-//        transactionManager.dump();
-//        /* Test 3 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.read(1, 3, 3);
-//        transactionManager.fail(2);
-//        transactionManager.write(2, 8, 88, 5);
-//        transactionManager.read(2, 3, 6);
-//        transactionManager.write(1, 5, 91, 7);
-//        transactionManager.end(2, 8);
-//        transactionManager.recover(2);
-//        transactionManager.end(1, 10);
-//        transactionManager.dump();
-//        /* Test 3.5 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.read(1, 3, 3);
-//        transactionManager.write(2, 8, 88, 4);
-//        transactionManager.fail(2);
-//        transactionManager.read(2, 3, 6);
-//        transactionManager.write(1, 4, 91, 7);
-//        transactionManager.recover(2);
-//        transactionManager.end(2, 9);
-//        transactionManager.end(1, 10);
-//        transactionManager.dump();
-//        /* Test 3.7 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.read(1, 3, 3);
-//        transactionManager.write(2, 8, 88, 4);
-//        transactionManager.fail(2);
-//        transactionManager.read(2, 3, 6);
-//        transactionManager.recover(2);
-//        transactionManager.write(1, 4, 91, 8);
-//        transactionManager.end(2, 9);
-//        transactionManager.end(1, 10);
-//        transactionManager.dump();
-//        /* Test 4 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.read(1, 1, 3);
-//        transactionManager.fail(2);
-//        transactionManager.write(2, 8, 88, 5);
-//        transactionManager.read(2, 3, 6);
-//        transactionManager.read(1, 5, 7);
-//        transactionManager.end(2, 8);
-//        transactionManager.recover(2);
-//        transactionManager.end(1, 10);
-//        transactionManager.dump();
-//        /* Test 5 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.write(1, 6, 66, 3);
-//        transactionManager.fail(2);
-//        transactionManager.write(2, 8, 88, 5);
-//        transactionManager.read(2, 3, 6);
-//        transactionManager.read(1, 5, 7);
-//        transactionManager.end(2, 8);
-//        transactionManager.recover(2);
-//        transactionManager.end(1, 10);
-//        transactionManager.dump();
-//        /* Test 6 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.fail(3);
-//        transactionManager.fail(4);
-//        transactionManager.read(1, 1, 5);
-//        transactionManager.write(2, 8, 88, 6);
-//        transactionManager.end(1, 7);
-//        transactionManager.recover(4);
-//        transactionManager.recover(3);
-//        transactionManager.read(2, 3, 9);
-//        transactionManager.end(2, 10);
-//        transactionManager.dump();
-//        /* Test 7 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.beginRO(2, 2);
-//        transactionManager.read(2, 1, 3);
-//        transactionManager.read(2, 2, 4);
-//        transactionManager.write(1, 3, 33, 5);
-//        transactionManager.end(1, 6);
-//        transactionManager.read(2, 3, 7);
-//        transactionManager.end(2, 8);
-//        transactionManager.dump();
-//        /* Test 8 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.beginRO(2, 2);
-//        transactionManager.read(2, 1, 3);
-//        transactionManager.read(2, 2, 4);
-//        transactionManager.write(1, 3, 33, 5);
-//        transactionManager.end(1, 6);
-//        transactionManager.beginRO(3, 7);
-//        transactionManager.read(3, 3, 8);
-//        transactionManager.read(2, 3, 9);
-//        transactionManager.end(2, 10);
-//        transactionManager.end(2, 11);
-//        transactionManager.dump();
-//        /* Test 9 */
-//        transactionManager.begin(3, 1);
-//        transactionManager.begin(1, 2);
-//        transactionManager.begin(2, 3);
-//        transactionManager.write(3, 2, 22, 4);
-//        transactionManager.write(2, 4, 44, 5);
-//        transactionManager.read(3, 4, 6);
-//        transactionManager.end(2, 7);
-//        transactionManager.end(3, 8);
-//        transactionManager.read(1, 2, 9);
-//        transactionManager.end(1, 10);
-//        transactionManager.dump();
-//        /* Test 10 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.begin(3, 3);
-//        transactionManager.write(3, 2, 22, 4);
-//        transactionManager.write(2, 4, 44, 5);
-//        transactionManager.read(3, 4, 6);
-//        transactionManager.end(2, 7);
-//        transactionManager.end(3, 8);
-//        transactionManager.read(1, 2, 9);
-//        transactionManager.end(1, 10);
-//        transactionManager.dump();
-//        /* Test 11 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.read(1, 2, 3);
-//        transactionManager.read(2, 2, 4);
-//        transactionManager.write(2, 2, 10, 5);
-//        transactionManager.end(1, 6);
-//        transactionManager.end(2, 7);
-//        transactionManager.dump();
-//        /* Test 12 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.read(1, 2, 3);
-//        transactionManager.read(2, 2, 4);
-//        transactionManager.end(1, 5);
-//        transactionManager.write(2, 2, 10, 6);
-//        transactionManager.end(2, 7);
-//        transactionManager.dump();
-//        /* Test 13 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.begin(3, 3);
-//        transactionManager.write(3, 2, 10, 4);
-//        transactionManager.write(2, 2, 10, 5);
-//        transactionManager.write(1, 2, 10, 6);
-//        transactionManager.end(3, 7);
-//        transactionManager.end(2, 8);
-//        transactionManager.end(1, 9);
-//        transactionManager.dump();
-//        /* Test 14 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.begin(3, 3);
-//        transactionManager.write(3, 2, 10, 4);
-//        transactionManager.write(1, 2, 10, 5);
-//        transactionManager.write(2, 2, 10, 6);
-//        transactionManager.end(3, 7);
-//        transactionManager.end(1, 8);
-//        transactionManager.end(2, 9);
-//        transactionManager.dump();
-//        /* Test 15 */
-//        transactionManager.begin(5, 1);
-//        transactionManager.begin(4, 2);
-//        transactionManager.begin(3, 3);
-//        transactionManager.begin(2, 4);
-//        transactionManager.begin(1, 5);
-//        transactionManager.write(1, 4, 5, 6);
-//        transactionManager.fail(2);
-//        transactionManager.write(2, 4, 44, 8);
-//        transactionManager.recover(2);
-//        transactionManager.write(3, 4, 55, 10);
-//        transactionManager.write(4, 4, 66, 11);
-//        transactionManager.write(5, 4, 77, 12);
-//        transactionManager.end(1, 13);
-//        transactionManager.end(2, 14);
-//        transactionManager.end(3, 15);
-//        transactionManager.end(4, 16);
-//        transactionManager.end(5, 17);
-//        transactionManager.dump();
-//        /* Test 16 */
-//        transactionManager.begin(3, 1);
-//        transactionManager.begin(1, 2);
-//        transactionManager.begin(2, 3);
-//        transactionManager.write(3, 2, 22, 4);
-//        transactionManager.write(2, 4, 44, 5);
-//        transactionManager.read(3, 4, 6);
-//        transactionManager.end(2, 7);
-//        transactionManager.end(3, 8);
-//        transactionManager.read(1, 2, 9);
-//        transactionManager.end(1, 10);
-//        transactionManager.dump();
-//        /* Test 17 */
-//        transactionManager.begin(3, 1);
-//        transactionManager.begin(1, 2);
-//        transactionManager.begin(2, 3);
-//        transactionManager.write(3, 2, 22, 4);
-//        transactionManager.write(2, 3, 44, 5);
-//        transactionManager.read(3, 3, 6);
-//        transactionManager.end(2, 7);
-//        transactionManager.fail(4);
-//        transactionManager.end(3, 9);
-//        transactionManager.read(1, 2, 10);
-//        transactionManager.end(1, 11);
-//        transactionManager.dump();
-//        /* Test 18 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.begin(3, 3);
-//        transactionManager.begin(4, 4);
-//        transactionManager.begin(5, 5);
-//        transactionManager.read(3, 3, 6);
-//        transactionManager.read(4, 4, 7);
-//        transactionManager.read(5, 5, 8);
-//        transactionManager.read(1, 1, 9);
-//        transactionManager.read(2, 2, 10);
-//        transactionManager.write(1, 2, 10, 11);
-//        transactionManager.write(2, 3, 20, 12);
-//        transactionManager.write(3, 4, 30, 13);
-//        transactionManager.write(4, 5, 40, 14);
-//        transactionManager.write(5, 1, 50, 15);
-//        transactionManager.end(4, 16);
-//        transactionManager.end(3, 17);
-//        transactionManager.end(2, 18);
-//        transactionManager.end(1, 19);
-//        transactionManager.dump();
-//        /* Test 19 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.begin(3, 3);
-//        transactionManager.begin(4, 4);
-//        transactionManager.begin(5, 5);
-//        transactionManager.read(3, 3, 6);
-//        transactionManager.fail(4);
-//        transactionManager.recover(4);
-//        transactionManager.read(4, 4, 9);
-//        transactionManager.read(5, 5, 10);
-//        transactionManager.read(1, 1, 11);
-//        transactionManager.read(2, 2, 12);
-//        transactionManager.write(1, 2, 10, 13);
-//        transactionManager.write(2, 3, 20, 14);
-//        transactionManager.write(3, 4, 30, 15);
-//        transactionManager.write(5, 1, 50, 16);
-//        transactionManager.end(5, 17);
-//        transactionManager.write(4, 5, 40, 18);
-//        transactionManager.end(4, 19);
-//        transactionManager.end(3, 20);
-//        transactionManager.end(2, 21);
-//        transactionManager.end(1, 22);
-//        transactionManager.dump();
-//        /* Test 20 */
-//        transactionManager.begin(1, 1);
-//        transactionManager.begin(2, 2);
-//        transactionManager.write(1, 2, 9, 3);
-//        transactionManager.fail(1);
-//        transactionManager.end(1, 5);
-//        transactionManager.begin(3, 6);
-//        transactionManager.write(3, 2, 100, 7);
-//        transactionManager.end(3, 8);
-//        transactionManager.recover(1);
-//        transactionManager.fail(2);
-//        transactionManager.fail(3);
-//        transactionManager.fail(4);
-//        transactionManager.fail(5);
-//        transactionManager.fail(6);
-//        transactionManager.fail(7);
-//        transactionManager.fail(8);
-//        transactionManager.fail(9);
-//        transactionManager.fail(10);
-//        transactionManager.read(2, 2, 19);
-//        transactionManager.begin(5, 20);
-//        transactionManager.write(5, 2, 90, 21);
-//        transactionManager.dump();
-        /* Test 21 */
-        transactionManager.begin(1, 1);
-        transactionManager.begin(2, 2);
-        transactionManager.read(2, 2, 3);
-        transactionManager.write(1, 2, 202, 4);
-        transactionManager.write(2, 2, 302, 5);
-        transactionManager.end(1, 6);
-        transactionManager.dump();
+        try {
+            bufferedReader = new BufferedReader(new FileReader(args[0]));
+            String line = bufferedReader.readLine();
+            int timeStamp = 1;
+            while (line != null) {
+                String[] tokens = line.split("[(,) ]+");
+                String option = tokens[0];
+                if (option.equals("begin")) {
+                    String transaction = tokens[1];
+                    int transactionID = Integer.parseInt(transaction.substring(1));
+                    transactionManager.begin(transactionID, timeStamp);
+                }
+                else if (option.equals("beginRO")) {
+                    String transaction = tokens[1];
+                    int transactionID = Integer.parseInt(transaction.substring(1));
+                    transactionManager.beginRO(transactionID, timeStamp);
+                }
+                else if (option.equals("R")) {
+                    int transactionID = Integer.parseInt(tokens[1].substring(1));
+                    int variableId = Integer.parseInt(tokens[2].substring(1));
+                    transactionManager.read(transactionID, variableId, timeStamp);
+                }
+                else if (option.equals("W")) {
+                    int transactionID = Integer.parseInt(tokens[1].substring(1));
+                    int variableId = Integer.parseInt(tokens[2].substring(1));
+                    int value = Integer.parseInt(tokens[3]);
+                    transactionManager.write(transactionID, variableId, value, timeStamp);
+                }
+                else if (option.equals("fail")) {
+                    int siteID = Integer.parseInt(tokens[1]);
+                    transactionManager.fail(siteID);
+                }
+                else if (option.equals("recover")) {
+                    int siteID = Integer.parseInt(tokens[1]);
+                    transactionManager.recover(siteID);
+                }
+                else if (option.equals("end")) {
+                    String transaction = tokens[1];
+                    int transactionID = Integer.parseInt(transaction.substring(1));
+                    transactionManager.end(transactionID, timeStamp);
+                }
+                else {
+                    transactionManager.dump();
+                }
+                timeStamp+=1;
+                line = bufferedReader.readLine();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
