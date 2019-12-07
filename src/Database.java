@@ -1,6 +1,11 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 
+/**
+ * This class is the main driver of the application.
+ * @version 12/05/2019
+ * @author Ming Xu, Xinyi Liu
+ */
 public class Database {
     public static void main(String[] args) {
         BufferedReader bufferedReader;
