@@ -49,6 +49,6 @@ T2 commits successfully but doesn't write to site 2 because it's down. T1 aborts
 
 T1 reads 101 because T1 is able to see its uncommitted value, and then commits successfully. However, T2 still read the initial value 10 rather than the value 101 that T1 commits due to multiversion read consistency.
 
-### test5
+#### test5
 
 A deadlock exists: T1 -> T2, T2 -> T3, T3 -> T1. All are blocked. T3 aborts since it's the youngest, which allows T2 to commit. T1 is unblocked after T2 commits, and also commits successfully.
